@@ -1,0 +1,141 @@
+import { useRef, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Link } from 'react-router-dom';
+import { ShoppingBag, Heart } from 'lucide-react';
+import useCartStore from '@/lib/cartStore';
+import GlowCard from '@/components/ui/GlowCard';
+import { resolveImage } from '@/lib/placeholders';
+
+// Magnetic button hook — cursor pulls button toward pointer
+function useMagnetic(strength = 0.3) {
+  const ref = useRef(null);
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+
+  const handleMouseMove = (e) => {
+    const rect = ref.current?.getBoundingClientRect();
+    if (!rect) return;
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    setOffset({
+      x: (e.clientX - cx) * strength,
+      y: (e.clientY - cy) * strength,
+    });
+  };
+
+  const handleMouseLeave = () => setOffset({ x: 0, y: 0 });
+
+  return { ref, offset, handleMouseMove, handleMouseLeave };
+}
+
+export default function ProductCard({ product, index = 0 }) {
+  const [hovering, setHovering] = useState(false);
+  const [videoError, setVideoError] = useState(false);
+  const addItem = useCartStore((s) => s.addItem);
+  const magnetic = useMagnetic(0.25);
+
+  const price = product.promo_price || product.price;
+  const hasPromo = product.promo_price && product.promo_price < product.price;
+  const defaultSize = product.variants?.[0]?.size || 'M';
+  const defaultColor = product.variants?.[0]?.color || '';
+  // resolveImage falls back to PLACEHOLDERS.product until Sanity URL is provided
+  const image = resolveImage(product.images?.[0]);
+
+  const handleAddToCart = (e) => {
+    e.preventDefault();
+    addItem(product, defaultSize, defaultColor);
+  };
+
+  return (
+    // Stagger entrance via Intersection Observer (whileInView)
+    <motion.div
+      initial={{ opacity: 0, y: 40 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-60px' }}
+      transition={{ delay: (index % 4) * 0.08, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+    >
+      <GlowCard className="overflow-hidden group">
+        <Link to={`/produto/${product.id}`}>
+          {/* Image / Video area */}
+          <div
+            className="relative aspect-[3/4] overflow-hidden bg-muted"
+            onMouseEnter={() => setHovering(true)}
+            onMouseLeave={() => setHovering(false)}
+          >
+            {/* Main image */}
+            <motion.img
+              src={image}
+              alt={product.title}
+              animate={{ opacity: hovering && product.video_url && !videoError ? 0 : 1 }}
+              transition={{ duration: 0.4 }}
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+
+            {/* Hover video — muted autoplay loop */}
+            {product.video_url && (
+              <motion.video
+                src={product.video_url}
+                autoPlay
+                loop
+                muted
+                playsInline
+                onError={() => setVideoError(true)}
+                animate={{ opacity: hovering && !videoError ? 1 : 0 }}
+                transition={{ duration: 0.4 }}
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+            )}
+
+            {/* Promo badge */}
+            {hasPromo && (
+              <div className="absolute top-3 left-3 bg-terracota text-white text-[10px] font-bold px-2 py-0.5 rounded-md tracking-wide uppercase">
+                Promo
+              </div>
+            )}
+
+            {/* Wishlist */}
+            <button className="absolute top-3 right-3 p-1.5 rounded-lg glass opacity-0 group-hover:opacity-100 transition-opacity hover:text-terracota">
+              <Heart className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Info */}
+          <div className="p-4">
+            <p className="text-xs text-terracota font-body uppercase tracking-widest mb-1">{product.category}</p>
+            <h3 className="font-heading font-semibold text-offwhite text-sm leading-tight mb-2 truncate">
+              {product.title}
+            </h3>
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="font-heading font-bold text-base text-offwhite">
+                  R$ {price?.toFixed(2).replace('.', ',')}
+                </span>
+                {hasPromo && (
+                  <span className="text-xs text-muted-foreground line-through">
+                    R$ {product.price.toFixed(2).replace('.', ',')}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        </Link>
+
+        {/* Magnetic Add to Cart button */}
+        <div className="px-4 pb-4">
+          <motion.button
+            ref={magnetic.ref}
+            onMouseMove={magnetic.handleMouseMove}
+            onMouseLeave={magnetic.handleMouseLeave}
+            onClick={handleAddToCart}
+            animate={{ x: magnetic.offset.x, y: magnetic.offset.y }}
+            transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+            className="w-full flex items-center justify-center gap-2 bg-white/5 hover:bg-terracota border border-white/10 hover:border-terracota text-offwhite font-heading font-semibold text-sm py-3 rounded-xl transition-all duration-300"
+          >
+            <ShoppingBag className="w-4 h-4" />
+            Adicionar ao Carrinho
+          </motion.button>
+        </div>
+      </GlowCard>
+    </motion.div>
+  );
+}

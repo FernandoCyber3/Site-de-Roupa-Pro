@@ -1,0 +1,26 @@
+{
+  "name": "Category",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Category display name"
+    },
+    "slug": {
+      "type": "string",
+      "description": "URL-friendly identifier"
+    },
+    "image": {
+      "type": "string",
+      "description": "Category thumbnail image URL"
+    },
+    "order": {
+      "type": "number",
+      "default": 0,
+      "description": "Display order"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

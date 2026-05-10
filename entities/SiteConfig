@@ -1,0 +1,42 @@
+{
+  "name": "SiteConfig",
+  "type": "object",
+  "properties": {
+    "brand_name": {
+      "type": "string",
+      "default": "SQUAD"
+    },
+    "hero_video_url": {
+      "type": "string",
+      "description": "Hero section video URL"
+    },
+    "hero_title": {
+      "type": "string",
+      "default": "Authentic Style"
+    },
+    "hero_subtitle": {
+      "type": "string",
+      "default": "Para quem vive o estilo autêntico"
+    },
+    "instagram_url": {
+      "type": "string"
+    },
+    "facebook_url": {
+      "type": "string"
+    },
+    "threads_url": {
+      "type": "string"
+    },
+    "whatsapp_number": {
+      "type": "string",
+      "description": "WhatsApp number with country code"
+    },
+    "banner_text": {
+      "type": "string",
+      "description": "Top banner announcement text"
+    }
+  },
+  "required": [
+    "brand_name"
+  ]
+}

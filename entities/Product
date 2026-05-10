@@ -1,0 +1,90 @@
+{
+  "name": "Product",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Product name"
+    },
+    "slug": {
+      "type": "string",
+      "description": "URL-friendly identifier"
+    },
+    "price": {
+      "type": "number",
+      "description": "Regular price in BRL"
+    },
+    "promo_price": {
+      "type": "number",
+      "description": "Promotional price in BRL (optional)"
+    },
+    "category": {
+      "type": "string",
+      "description": "Category name"
+    },
+    "description": {
+      "type": "string",
+      "description": "Product description"
+    },
+    "images": {
+      "type": "array",
+      "description": "Product image URLs",
+      "items": {
+        "type": "string"
+      }
+    },
+    "video_url": {
+      "type": "string",
+      "description": "Hover video URL"
+    },
+    "variants": {
+      "type": "array",
+      "description": "Available variants with color, size, stock",
+      "items": {
+        "type": "object",
+        "properties": {
+          "color": {
+            "type": "string"
+          },
+          "size": {
+            "type": "string",
+            "enum": [
+              "P",
+              "M",
+              "G",
+              "GG"
+            ]
+          },
+          "stock": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "featured": {
+      "type": "boolean",
+      "default": false,
+      "description": "Show in featured section"
+    },
+    "seo_title": {
+      "type": "string"
+    },
+    "seo_description": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "draft",
+        "sold_out"
+      ],
+      "default": "active"
+    }
+  },
+  "required": [
+    "title",
+    "price",
+    "category"
+  ]
+}
