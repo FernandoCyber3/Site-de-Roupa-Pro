@@ -18,17 +18,26 @@ const SPARK_DEFS = [
   { left: '94%', delay: '1.5s',  color: '#ffcc44' },
 ];
 
+// Detecta se é dispositivo touch (mobile/tablet)
+const isTouchDevice = () =>
+  typeof window !== 'undefined' &&
+  ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+
 export default function HeroSection({ config }) {
   const containerRef = useRef(null);
   const [phase, setPhase] = useState('initial'); // initial → sweep → ember
+  const [isMobile] = useState(isTouchDevice);
 
+  // Tilt só existe no desktop — no mobile não cria motion values
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
   const rotateX = useSpring(useTransform(mouseY, [-300, 300], [6, -6]), { stiffness: 50, damping: 20 });
   const rotateY = useSpring(useTransform(mouseX, [-500, 500], [-8, 8]), { stiffness: 50, damping: 20 });
 
-  // Auto tilt (sem sparks via JS)
+  // Auto tilt — APENAS no desktop para evitar o bug de giro no mobile
   useEffect(() => {
+    if (isMobile) return; // <-- desabilitado completamente no mobile
+
     let cancelled = false;
     const pts = [
       { x: 120, y: -200 }, { x: -80, y: 250 },
@@ -43,23 +52,24 @@ export default function HeroSection({ config }) {
     };
     tick();
     return () => { cancelled = true; };
-  }, []);
+  }, [isMobile]);
 
-  // Fases: sweep começa cedo, ember ativa depois que a última letra aquece
+  // Fases da animação Ember Forge
   useEffect(() => {
     const t1 = setTimeout(() => setPhase('sweep'), 300);
-    // última letra: delay 0.5 + 4*0.18 = 1.22s, duração 0.85s → termina em ~2.07s
     const t2 = setTimeout(() => setPhase('ember'), 2400);
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, []);
 
   const handleMouseMove = (e) => {
+    if (isMobile) return;
     const rect = containerRef.current?.getBoundingClientRect();
     if (!rect) return;
     mouseX.set(e.clientX - rect.left - rect.width / 2);
     mouseY.set(e.clientY - rect.top - rect.height / 2);
   };
   const handleMouseLeave = () => {
+    if (isMobile) return;
     animate(mouseX, 0, { duration: 1 });
     animate(mouseY, 0, { duration: 1 });
   };
@@ -83,15 +93,18 @@ export default function HeroSection({ config }) {
       <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/90" />
       <div className="absolute inset-0 bg-gradient-to-r from-black/30 via-transparent to-black/30" />
 
-      {/* 3D tilt container */}
+      {/*
+        No mobile: sem tilt (rotateX/Y fixos em 0), sem perspective
+        No desktop: tilt 3D suave
+      */}
       <motion.div
-        style={{ rotateX, rotateY, transformPerspective: 1000 }}
+        style={isMobile ? {} : { rotateX, rotateY, transformPerspective: 1000 }}
         className="relative z-10 text-center px-5 max-w-5xl mx-auto"
       >
         {/* ═══ SQUAD ═══ */}
         <div className="relative inline-block mb-3">
 
-          {/* CSS sparks — só renderiza na fase ember, animados 100% via CSS */}
+          {/* CSS sparks — só renderiza na fase ember */}
           {phase === 'ember' && (
             <div className="squad-sparks absolute inset-0 pointer-events-none" aria-hidden="true">
               {SPARK_DEFS.map((s, i) => (
@@ -104,7 +117,7 @@ export default function HeroSection({ config }) {
             </div>
           )}
 
-          {/* Barra de luz varrendo L→R (só na fase sweep) */}
+          {/* Barra de luz varrendo (só na fase sweep) */}
           {phase === 'sweep' && (
             <motion.div
               className="absolute top-0 bottom-0 w-1 z-20 pointer-events-none"
@@ -118,7 +131,7 @@ export default function HeroSection({ config }) {
             />
           )}
 
-          {/* Letras — animação inicial (sweep) depois ficam estáticas com brilho fixo */}
+          {/* Letras */}
           <h1 className="font-heading font-black text-7xl md:text-9xl lg:text-[11rem] leading-none tracking-tight flex items-center justify-center">
             {LETTERS.map((letter, i) => {
               if (phase === 'initial') {
@@ -145,7 +158,7 @@ export default function HeroSection({ config }) {
                 );
               }
 
-              // ember: cor e brilho FIXOS — sem piscar, sem repeat
+              // ember: brilho fixo, sem piscar
               return (
                 <span
                   key={i}
@@ -160,7 +173,7 @@ export default function HeroSection({ config }) {
             })}
           </h1>
 
-          {/* Glow de calor no chão — suave, estático */}
+          {/* Glow de calor no chão */}
           {phase === 'ember' && (
             <div
               className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-3/4 h-6 pointer-events-none"
@@ -229,7 +242,7 @@ export default function HeroSection({ config }) {
         />
       </motion.div>
 
-      {/* CSS puro para sparks — GPU acelerado, zero JS overhead */}
+      {/* CSS puro para sparks */}
       <style>{`
         @keyframes spark-rise {
           0%   { transform: translateY(0) translateX(0) scale(1); opacity: 0; }

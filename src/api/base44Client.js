@@ -1,13 +1,13 @@
 import { createClient } from '@sanity/client';
 import { createImageUrlBuilder } from '@sanity/image-url';
 
-// 1. Configurando o cliente do Sanity com os dados fornecidos
+// 1. Configurando o cliente do Sanity com os dados fornecidos via variáveis de ambiente
 export const sanityClient = createClient({
-  projectId: 'p0fj0d8j',
-  dataset: 'production',
+  projectId: import.meta.env.VITE_SANITY_PROJECT_ID || 'p0fj0d8j',
+  dataset: import.meta.env.VITE_SANITY_DATASET || 'production',
   useCdn: true, // Use CDN para respostas mais rápidas
   apiVersion: '2024-05-03', // Data atual
-  token: '', // Token será necessário apenas para gravar dados (ex: Checkout)
+  token: import.meta.env.VITE_SANITY_TOKEN || '', // Token para operações de escrita (opcional)
 });
 
 // 2. Construtor de URLs de imagens do Sanity

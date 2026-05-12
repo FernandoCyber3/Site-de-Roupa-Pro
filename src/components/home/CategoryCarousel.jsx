@@ -19,6 +19,21 @@ export default function CategoryCarousel({ categories }) {
   const scrollRef = useRef(null);
   const items = categories?.length ? categories : DEFAULT_CATEGORIES;
 
+  // Touch swipe
+  const touchStart = useRef(null);
+  const touchScroll = useRef(0);
+
+  const onTouchStart = (e) => {
+    touchStart.current = e.touches[0].clientX;
+    touchScroll.current = scrollRef.current?.scrollLeft || 0;
+  };
+  const onTouchMove = (e) => {
+    if (touchStart.current === null) return;
+    const delta = touchStart.current - e.touches[0].clientX;
+    if (scrollRef.current) scrollRef.current.scrollLeft = touchScroll.current + delta;
+  };
+  const onTouchEnd = () => { touchStart.current = null; };
+
   const scroll = (dir) => {
     if (!scrollRef.current) return;
     scrollRef.current.scrollBy({ left: dir * 280, behavior: 'smooth' });
@@ -56,6 +71,9 @@ export default function CategoryCarousel({ categories }) {
           ref={scrollRef}
           className="flex gap-4 overflow-x-auto pb-4 pl-[7px] scrollbar-hide"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
         >
           {items.map((cat, i) => (
             <motion.div

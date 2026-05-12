@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, ShoppingBag, Lock } from 'lucide-react';
@@ -80,9 +80,11 @@ export default function Checkout() {
 
       if (paymentResult.qr_code_base64) {
         setPixData(paymentResult);
+        window.scrollTo({ top: 0, behavior: 'smooth' }); // sobe pra ver o QR Code
       } else {
         clearCart();
         setSuccess(true);
+        window.scrollTo({ top: 0, behavior: 'smooth' }); // sobe pra ver confirmação
       }
     } catch (error) {
       console.error(error);
@@ -132,6 +134,7 @@ export default function Checkout() {
             clearCart();
             setSuccess(true);
             setPixData(null);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
           }}
           className="w-full bg-white/5 hover:bg-white/10 text-offwhite font-heading font-bold px-8 py-3 rounded-xl transition-colors"
         >

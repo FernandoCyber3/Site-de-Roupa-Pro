@@ -16,7 +16,7 @@ export default function Layout() {
   const config = configs?.[0];
 
   return (
-    <div className="min-h-screen bg-background font-body">
+    <div className="min-h-screen bg-background font-body overflow-x-hidden">
       <Navbar config={config} />
       <CartDrawer />
       <PWAInstallPrompt />
