@@ -30,10 +30,13 @@ function useMagnetic(strength = 0.3) {
 
 export default function ProductCard({ product, index = 0 }) {
   const [hovering, setHovering] = useState(false);
+  const [touched, setTouched] = useState(false); // mobile tap state
   const [videoError, setVideoError] = useState(false);
   const addItem = useCartStore((s) => s.addItem);
   const magnetic = useMagnetic(0.25);
   const { toast } = useToast();
+
+  const showVideo = (hovering || touched) && product.video_url && !videoError;
 
   const price = product.promo_price || product.price;
   const hasPromo = product.promo_price && product.promo_price < product.price;
@@ -66,17 +69,18 @@ export default function ProductCard({ product, index = 0 }) {
             className="relative aspect-[3/4] overflow-hidden bg-muted"
             onMouseEnter={() => setHovering(true)}
             onMouseLeave={() => setHovering(false)}
+            onTouchStart={() => setTouched((v) => !v)}
           >
             {/* Main image */}
             <motion.img
               src={image}
               alt={product.title}
-              animate={{ opacity: hovering && product.video_url && !videoError ? 0 : 1 }}
+              animate={{ opacity: showVideo ? 0 : 1 }}
               transition={{ duration: 0.4 }}
               className="absolute inset-0 w-full h-full object-cover"
             />
 
-            {/* Hover video — muted autoplay loop */}
+            {/* Video — autoplay on hover (desktop) or tap (mobile) */}
             {product.video_url && (
               <motion.video
                 src={product.video_url}
@@ -85,10 +89,17 @@ export default function ProductCard({ product, index = 0 }) {
                 muted
                 playsInline
                 onError={() => setVideoError(true)}
-                animate={{ opacity: hovering && !videoError ? 1 : 0 }}
+                animate={{ opacity: showVideo ? 1 : 0 }}
                 transition={{ duration: 0.4 }}
                 className="absolute inset-0 w-full h-full object-cover"
               />
+            )}
+
+            {/* Mobile tap hint — só aparece quando há vídeo e em touch */}
+            {product.video_url && touched && (
+              <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded-full font-body">
+                toque para pausar
+              </div>
             )}
 
             {/* Promo badge */}

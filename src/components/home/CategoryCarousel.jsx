@@ -54,7 +54,7 @@ export default function CategoryCarousel({ categories }) {
         {/* Carousel */}
         <div
           ref={scrollRef}
-          className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide"
+          className="flex gap-4 overflow-x-auto pb-4 pl-[7px] scrollbar-hide"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {items.map((cat, i) => (
@@ -72,23 +72,19 @@ export default function CategoryCarousel({ categories }) {
               >
                 {/* Spherical category with gradient border */}
                 <div className="relative w-24 h-24 md:w-28 md:h-28">
-                  {/* Animated gradient ring */}
+                  {/* Premium conic-gradient spinning ring */}
                   <div
-                    className="absolute inset-0 rounded-full p-[2px]"
-                    style={{
-                      background: 'linear-gradient(135deg, #A65432, #F2E9D0, #A65432)',
-                      animation: 'spin 4s linear infinite',
-                    }}
+                    className="absolute inset-0 rounded-full p-[2.5px] cat-ring"
                   >
                     <div className="w-full h-full rounded-full bg-background" />
                   </div>
                   <img
                     src={cat.image}
                     alt={cat.name}
-                    className="absolute inset-[2px] rounded-full object-cover w-[calc(100%-4px)] h-[calc(100%-4px)] group-hover:scale-105 transition-transform duration-500"
+                    className="absolute inset-[3px] rounded-full object-cover w-[calc(100%-6px)] h-[calc(100%-6px)] group-hover:scale-110 transition-transform duration-500"
                   />
                 </div>
-                <span className="text-sm font-body font-medium text-muted-foreground group-hover:text-offwhite transition-colors text-center">
+                <span className="text-sm font-body font-semibold text-offwhite/70 group-hover:text-offwhite transition-colors text-center">
                   {cat.name}
                 </span>
               </Link>
@@ -98,7 +94,12 @@ export default function CategoryCarousel({ categories }) {
       </div>
 
       <style>{`
-        @keyframes spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }
+        @keyframes spin-ring { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }
+        .cat-ring {
+          background: conic-gradient(from 0deg, #A65432, #F2BE50, #fff0d0, #F2BE50, #A65432, #A65432 80%, #F2BE50);
+          animation: spin-ring 3s linear infinite;
+          will-change: transform;
+        }
       `}</style>
     </section>
   );

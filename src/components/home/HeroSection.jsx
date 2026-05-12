@@ -1,18 +1,57 @@
 import { useRef, useEffect, useState } from 'react';
-import { motion, useMotionValue, useTransform, useSpring } from 'framer-motion';
+import { motion, useMotionValue, useTransform, useSpring, animate } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { PLACEHOLDERS } from '@/lib/placeholders';
 
+const LETTERS = ['S', 'Q', 'U', 'A', 'D'];
+
+// CSS-driven sparks — zero JS overhead após mount
+const SPARK_DEFS = [
+  { left: '4%',  delay: '0s',    color: '#ff8c00' },
+  { left: '16%', delay: '0.7s',  color: '#ffaa00' },
+  { left: '28%', delay: '1.3s',  color: '#ff6600' },
+  { left: '43%', delay: '0.4s',  color: '#ffcc44' },
+  { left: '57%', delay: '1.0s',  color: '#ff8c00' },
+  { left: '70%', delay: '0.2s',  color: '#ffaa00' },
+  { left: '83%', delay: '0.9s',  color: '#ff6600' },
+  { left: '94%', delay: '1.5s',  color: '#ffcc44' },
+];
+
 export default function HeroSection({ config }) {
   const containerRef = useRef(null);
+  const [phase, setPhase] = useState('initial'); // initial → sweep → ember
 
-  // Mouse tilt for 3D text effect
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
-  const springConfig = { stiffness: 50, damping: 20 };
-  const rotateX = useSpring(useTransform(mouseY, [-300, 300], [6, -6]), springConfig);
-  const rotateY = useSpring(useTransform(mouseX, [-500, 500], [-8, 8]), springConfig);
+  const rotateX = useSpring(useTransform(mouseY, [-300, 300], [6, -6]), { stiffness: 50, damping: 20 });
+  const rotateY = useSpring(useTransform(mouseX, [-500, 500], [-8, 8]), { stiffness: 50, damping: 20 });
+
+  // Auto tilt (sem sparks via JS)
+  useEffect(() => {
+    let cancelled = false;
+    const pts = [
+      { x: 120, y: -200 }, { x: -80, y: 250 },
+      { x: 60, y: 180 },   { x: -140, y: -120 }, { x: 100, y: -250 },
+    ];
+    let i = 0;
+    const tick = () => {
+      if (cancelled) return;
+      const { x, y } = pts[i++ % pts.length];
+      animate(mouseX, x, { duration: 3, ease: 'easeInOut' });
+      animate(mouseY, y, { duration: 3, ease: 'easeInOut', onComplete: tick });
+    };
+    tick();
+    return () => { cancelled = true; };
+  }, []);
+
+  // Fases: sweep começa cedo, ember ativa depois que a última letra aquece
+  useEffect(() => {
+    const t1 = setTimeout(() => setPhase('sweep'), 300);
+    // última letra: delay 0.5 + 4*0.18 = 1.22s, duração 0.85s → termina em ~2.07s
+    const t2 = setTimeout(() => setPhase('ember'), 2400);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, []);
 
   const handleMouseMove = (e) => {
     const rect = containerRef.current?.getBoundingClientRect();
@@ -20,14 +59,12 @@ export default function HeroSection({ config }) {
     mouseX.set(e.clientX - rect.left - rect.width / 2);
     mouseY.set(e.clientY - rect.top - rect.height / 2);
   };
-
   const handleMouseLeave = () => {
-    mouseX.set(0);
-    mouseY.set(0);
+    animate(mouseX, 0, { duration: 1 });
+    animate(mouseY, 0, { duration: 1 });
   };
 
-  const title = config?.hero_title || 'Authentic Style';
-  const subtitle = config?.hero_subtitle || 'Para quem vive o estilo autêntico';
+  const subtitle = config?.hero_subtitle || 'Authentic Style';
   const videoUrl = config?.hero_video_url;
 
   return (
@@ -37,72 +74,128 @@ export default function HeroSection({ config }) {
       onMouseLeave={handleMouseLeave}
       className="relative min-h-screen flex items-center justify-center overflow-hidden"
     >
-      {/* Background media */}
+      {/* Background */}
       {videoUrl ? (
-        <video
-          src={videoUrl}
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="absolute inset-0 w-full h-full object-cover"
-        />
+        <video src={videoUrl} autoPlay loop muted playsInline className="absolute inset-0 w-full h-full object-cover" />
       ) : (
-        /* PLACEHOLDER — substitua hero_video_url ou hero_image no SiteConfig pelo asset do Sanity */
-        <img
-          src={PLACEHOLDERS.hero}
-          alt="SQUAD Authentic Style"
-          className="absolute inset-0 w-full h-full object-cover"
-        />
+        <img src={PLACEHOLDERS.hero} alt="SQUAD" className="absolute inset-0 w-full h-full object-cover" />
       )}
-
-      {/* Overlays */}
       <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/90" />
       <div className="absolute inset-0 bg-gradient-to-r from-black/30 via-transparent to-black/30" />
 
-      {/* 3D Tilt text */}
+      {/* 3D tilt container */}
       <motion.div
         style={{ rotateX, rotateY, transformPerspective: 1000 }}
-        className="relative z-10 text-center px-5 max-w-4xl mx-auto"
+        className="relative z-10 text-center px-5 max-w-5xl mx-auto"
       >
-        {/* SQUAD badge */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="inline-flex items-center gap-2 glass px-4 py-1.5 rounded-full mb-6"
-        >
-          <span className="w-1.5 h-1.5 rounded-full bg-terracota animate-pulse" />
-          <span className="text-xs text-terracota font-body tracking-[0.25em] uppercase font-semibold">
-            SQUAD
-          </span>
-        </motion.div>
+        {/* ═══ SQUAD ═══ */}
+        <div className="relative inline-block mb-3">
 
-        {/* Main heading */}
-        <motion.h1
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.35, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="font-heading font-black text-5xl md:text-7xl lg:text-8xl text-offwhite leading-none tracking-tight mb-4"
-        >
-          {title}
-        </motion.h1>
+          {/* CSS sparks — só renderiza na fase ember, animados 100% via CSS */}
+          {phase === 'ember' && (
+            <div className="squad-sparks absolute inset-0 pointer-events-none" aria-hidden="true">
+              {SPARK_DEFS.map((s, i) => (
+                <div
+                  key={i}
+                  className="spark"
+                  style={{ left: s.left, background: s.color, animationDelay: s.delay }}
+                />
+              ))}
+            </div>
+          )}
 
-        {/* Sub */}
+          {/* Barra de luz varrendo L→R (só na fase sweep) */}
+          {phase === 'sweep' && (
+            <motion.div
+              className="absolute top-0 bottom-0 w-1 z-20 pointer-events-none"
+              initial={{ left: '-2%' }}
+              animate={{ left: '104%' }}
+              transition={{ delay: 0.15, duration: 1.3, ease: 'easeInOut' }}
+              style={{
+                background: 'linear-gradient(to bottom, transparent, #ffe070, #ff8c00, #ffe070, transparent)',
+                boxShadow: '0 0 28px 12px rgba(255,160,0,0.6)',
+              }}
+            />
+          )}
+
+          {/* Letras — animação inicial (sweep) depois ficam estáticas com brilho fixo */}
+          <h1 className="font-heading font-black text-7xl md:text-9xl lg:text-[11rem] leading-none tracking-tight flex items-center justify-center">
+            {LETTERS.map((letter, i) => {
+              if (phase === 'initial') {
+                return <span key={i} style={{ color: '#1a0800' }}>{letter}</span>;
+              }
+
+              if (phase === 'sweep') {
+                return (
+                  <motion.span
+                    key={i}
+                    initial={{ color: '#1a0800' }}
+                    animate={{
+                      color: ['#1a0800', '#ff8c00', '#fff4e0'],
+                      textShadow: [
+                        'none',
+                        '0 0 50px #ff8c00, 0 0 100px #ff4500, 0 0 160px #ff2200',
+                        '0 0 20px #ff8c00, 0 0 40px #ff4500',
+                      ],
+                    }}
+                    transition={{ delay: 0.5 + i * 0.18, duration: 0.85, times: [0, 0.45, 1] }}
+                  >
+                    {letter}
+                  </motion.span>
+                );
+              }
+
+              // ember: cor e brilho FIXOS — sem piscar, sem repeat
+              return (
+                <span
+                  key={i}
+                  style={{
+                    color: '#fff4e0',
+                    textShadow: '0 0 18px rgba(255,140,0,0.5), 0 0 35px rgba(255,80,0,0.25)',
+                  }}
+                >
+                  {letter}
+                </span>
+              );
+            })}
+          </h1>
+
+          {/* Glow de calor no chão — suave, estático */}
+          {phase === 'ember' && (
+            <div
+              className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-3/4 h-6 pointer-events-none"
+              style={{
+                background: 'radial-gradient(ellipse at center, rgba(255,100,0,0.18) 0%, transparent 70%)',
+                filter: 'blur(10px)',
+              }}
+            />
+          )}
+        </div>
+
+        {/* Authentic Style */}
         <motion.p
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.55, duration: 0.6 }}
-          className="text-base md:text-lg text-offwhite/60 font-body max-w-md mx-auto mb-10"
+          transition={{ delay: 0.5, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+          className="font-heading font-semibold text-sm md:text-lg lg:text-xl text-terracota tracking-[0.4em] uppercase mb-4"
         >
           {subtitle}
         </motion.p>
 
+        <motion.p
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.65, duration: 0.6 }}
+          className="text-sm md:text-base text-offwhite/50 font-body max-w-md mx-auto mb-10"
+        >
+          {config?.hero_description || 'Para quem vive o estilo autêntico'}
+        </motion.p>
+
         {/* CTAs */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.7 }}
+          transition={{ delay: 0.8 }}
           className="flex flex-col sm:flex-row items-center justify-center gap-4"
         >
           <Link
@@ -125,7 +218,7 @@ export default function HeroSection({ config }) {
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 1.2 }}
+        transition={{ delay: 1.4 }}
         className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
       >
         <span className="text-[10px] text-offwhite/30 font-body tracking-[0.3em] uppercase">Scroll</span>
@@ -135,6 +228,26 @@ export default function HeroSection({ config }) {
           className="w-px h-8 bg-gradient-to-b from-terracota/60 to-transparent"
         />
       </motion.div>
+
+      {/* CSS puro para sparks — GPU acelerado, zero JS overhead */}
+      <style>{`
+        @keyframes spark-rise {
+          0%   { transform: translateY(0) translateX(0) scale(1); opacity: 0; }
+          15%  { opacity: 1; }
+          100% { transform: translateY(-90px) translateX(var(--spark-dx, 12px)) scale(0.2); opacity: 0; }
+        }
+        .spark {
+          position: absolute;
+          bottom: 10px;
+          width: 3px;
+          height: 3px;
+          border-radius: 50%;
+          animation: spark-rise 2s ease-out infinite;
+          will-change: transform, opacity;
+        }
+        .spark:nth-child(odd)  { --spark-dx:  18px; }
+        .spark:nth-child(even) { --spark-dx: -14px; }
+      `}</style>
     </section>
   );
 }

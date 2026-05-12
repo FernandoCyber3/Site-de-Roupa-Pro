@@ -29,6 +29,33 @@ export default {
       name: 'threads_url',
       title: 'URL do Threads',
       type: 'url'
-    }
+    },
+
+    // ─── Vídeos em Destaque (Seção da Homepage) ──────────────────────────────
+    // Para trocar os vídeos basta colar a URL direta do arquivo .mp4 ou .webm
+    {
+      name: 'feature_video_1',
+      title: '📹 Vídeo Destaque 1 — URL (painel esquerdo)',
+      type: 'url',
+      description: 'URL direta do vídeo (ex: https://cdn.exemplo.com/video1.mp4). Aparece no painel esquerdo da seção de vídeos.'
+    },
+    {
+      name: 'feature_video_label_1',
+      title: '🏷️ Vídeo Destaque 1 — Legenda',
+      type: 'string',
+      description: 'Texto exibido sobre o vídeo 1. Ex: Nova Coleção Verão'
+    },
+    {
+      name: 'feature_video_2',
+      title: '📹 Vídeo Destaque 2 — URL (painel direito)',
+      type: 'url',
+      description: 'URL direta do vídeo (ex: https://cdn.exemplo.com/video2.mp4). Aparece no painel direito da seção de vídeos.'
+    },
+    {
+      name: 'feature_video_label_2',
+      title: '🏷️ Vídeo Destaque 2 — Legenda',
+      type: 'string',
+      description: 'Texto curto exibido sobre o vídeo 2. Ex: Streetwear Exclusivo'
+    },
   ]
 }

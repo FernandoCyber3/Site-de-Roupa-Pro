@@ -5,6 +5,7 @@ import { base44 } from '@/api/base44Client';
 import HeroSection from '@/components/home/HeroSection';
 import CategoryCarousel from '@/components/home/CategoryCarousel';
 import FeaturedProducts from '@/components/home/FeaturedProducts';
+import VideoShowcase from '@/components/home/VideoShowcase';
 import BannerStrip from '@/components/home/BannerStrip';
 import { motion } from 'framer-motion';
 
@@ -57,6 +58,14 @@ export default function Home() {
 
       {/* Featured products */}
       <FeaturedProducts products={products} />
+
+      {/* Video Showcase — só aparece quando URLs estiverem configuradas no Sanity */}
+      <VideoShowcase config={config} />
+
+      {/* Divider */}
+      <div className="max-w-7xl mx-auto px-5">
+        <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+      </div>
 
       {/* Brand value strip */}
       <section className="py-20 px-5">
