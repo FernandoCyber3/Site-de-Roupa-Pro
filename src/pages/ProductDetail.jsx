@@ -8,6 +8,7 @@ import useCartStore from '@/lib/cartStore';
 import GlowCard from '@/components/ui/GlowCard';
 import ProductCard from '@/components/products/ProductCard';
 import { resolveImage } from '@/lib/placeholders';
+import { useToast } from '@/components/ui/use-toast';
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -18,6 +19,7 @@ export default function ProductDetail() {
 
   const addItem = useCartStore((s) => s.addItem);
   const openCart = useCartStore((s) => s.openCart);
+  const { toast } = useToast();
 
   const { data: product, isLoading } = useQuery({
     queryKey: ['product', id],
@@ -38,12 +40,21 @@ export default function ProductDetail() {
 
   const handleAddToCart = () => {
     if (!product) return;
-    const size = selectedSize || product.variants?.[0]?.size || 'M';
-    const color = selectedColor || product.variants?.[0]?.color || '';
-    addItem(product, size, color);
+    const size = selectedSize || sizes[0] || 'M';
+    const color = selectedColor || colors[0] || '';
+    
+    // Encontrar a imagem correta para esta variante
+    const variant = product.variants?.find(v => v.color === color && v.size === size) 
+                   || product.variants?.find(v => v.color === color);
+    const variantImage = variant?.image || images[currentImg] || product.images?.[0];
+
+    addItem(product, size, color, variantImage);
     setAdded(true);
+    toast({
+      title: "Adicionado ao carrinho",
+      description: `${product.title} - Tam: ${size}`,
+    });
     setTimeout(() => setAdded(false), 2000);
-    openCart();
   };
 
   // Unique colors available
@@ -149,7 +160,7 @@ export default function ProductDetail() {
   const hasPromo = product.promo_price && product.promo_price < product.price;
 
   return (
-    <div className="min-h-screen pt-28 pb-20 px-5">
+    <div className="min-h-screen pt-32 pb-20 px-5">
       <div className="max-w-7xl mx-auto">
         {/* Breadcrumb */}
         <Link
@@ -281,19 +292,30 @@ export default function ProductDetail() {
                   Tamanho
                 </p>
                 <div className="flex gap-2 flex-wrap">
-                  {sizes.map((sz, i) => (
-                    <button
-                      key={`${i}-${sz}`}
-                      onClick={() => setSelectedSize(sz)}
-                      className={`w-12 h-12 rounded-xl text-sm font-heading font-bold border transition-all ${
-                        (selectedSize || sizes[0]) === sz
-                          ? 'border-terracota bg-terracota text-white'
-                          : 'border-white/15 text-muted-foreground hover:border-terracota/50'
-                      }`}
-                    >
-                      {sz}
-                    </button>
-                  ))}
+                  {sizes.map((sz, i) => {
+                    const isSelected = (selectedSize || sizes[0]) === sz;
+                    return (
+                      <button
+                        key={`${i}-${sz}`}
+                        onClick={() => {
+                          setSelectedSize(sz);
+                          // Se esse tamanho não estiver disponível na cor atual, muda para uma cor que tenha
+                          const currentVariant = product.variants?.find(v => v.size === sz && v.color === (selectedColor || colors[0]));
+                          if (!currentVariant) {
+                            const availableColor = product.variants?.find(v => v.size === sz)?.color;
+                            if (availableColor) handleColorChange(availableColor);
+                          }
+                        }}
+                        className={`w-12 h-12 rounded-xl text-sm font-heading font-bold border transition-all ${
+                          isSelected
+                            ? 'border-terracota bg-terracota text-white'
+                            : 'border-white/15 text-muted-foreground hover:border-terracota/50'
+                        }`}
+                      >
+                        {sz}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}

@@ -74,7 +74,7 @@ export default function HeroSection({ config }) {
         >
           <span className="w-1.5 h-1.5 rounded-full bg-terracota animate-pulse" />
           <span className="text-xs text-terracota font-body tracking-[0.25em] uppercase font-semibold">
-            Nova Coleção
+            SQUAD
           </span>
         </motion.div>
 

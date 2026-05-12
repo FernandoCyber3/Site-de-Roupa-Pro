@@ -5,6 +5,7 @@ import { ShoppingBag, Heart } from 'lucide-react';
 import useCartStore from '@/lib/cartStore';
 import GlowCard from '@/components/ui/GlowCard';
 import { resolveImage } from '@/lib/placeholders';
+import { useToast } from '@/components/ui/use-toast';
 
 // Magnetic button hook — cursor pulls button toward pointer
 function useMagnetic(strength = 0.3) {
@@ -32,6 +33,7 @@ export default function ProductCard({ product, index = 0 }) {
   const [videoError, setVideoError] = useState(false);
   const addItem = useCartStore((s) => s.addItem);
   const magnetic = useMagnetic(0.25);
+  const { toast } = useToast();
 
   const price = product.promo_price || product.price;
   const hasPromo = product.promo_price && product.promo_price < product.price;
@@ -43,6 +45,10 @@ export default function ProductCard({ product, index = 0 }) {
   const handleAddToCart = (e) => {
     e.preventDefault();
     addItem(product, defaultSize, defaultColor);
+    toast({
+      title: "Adicionado ao carrinho",
+      description: `${product.title} - Tam: ${defaultSize}`,
+    });
   };
 
   return (
@@ -53,8 +59,8 @@ export default function ProductCard({ product, index = 0 }) {
       viewport={{ once: true, margin: '-60px' }}
       transition={{ delay: (index % 4) * 0.08, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
     >
-      <GlowCard className="overflow-hidden group">
-        <Link to={`/produto/${product.id}`}>
+      <GlowCard className="overflow-hidden group h-full flex flex-col">
+        <Link to={`/produto/${product.id}`} className="flex-1 flex flex-col">
           {/* Image / Video area */}
           <div
             className="relative aspect-[3/4] overflow-hidden bg-muted"
@@ -99,13 +105,13 @@ export default function ProductCard({ product, index = 0 }) {
           </div>
 
           {/* Info */}
-          <div className="p-4">
-            <p className="text-xs text-terracota font-body uppercase tracking-widest mb-1">{product.category}</p>
+          <div className="p-4 flex-1 flex flex-col">
+            <p className="text-[10px] text-terracota font-body uppercase tracking-widest mb-1 truncate">{product.category}</p>
             <h3 className="font-heading font-semibold text-offwhite text-sm leading-tight mb-2 truncate">
               {product.title}
             </h3>
 
-            <div className="flex items-center justify-between">
+            <div className="mt-auto flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="font-heading font-bold text-base text-offwhite">
                   R$ {price?.toFixed(2).replace('.', ',')}
@@ -132,7 +138,7 @@ export default function ProductCard({ product, index = 0 }) {
             className="w-full flex items-center justify-center gap-2 bg-white/5 hover:bg-terracota border border-white/10 hover:border-terracota text-offwhite font-heading font-semibold text-sm py-3 rounded-xl transition-all duration-300"
           >
             <ShoppingBag className="w-4 h-4" />
-            Adicionar ao Carrinho
+            Add ao Carrinho
           </motion.button>
         </div>
       </GlowCard>

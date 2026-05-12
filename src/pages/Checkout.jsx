@@ -7,7 +7,6 @@ import { initMercadoPago, Payment } from '@mercadopago/sdk-react';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
 
-// Segurança: Inicializa o Mercado Pago usando a Chave Pública (Segura para Frontend)
 initMercadoPago(import.meta.env.VITE_MP_PUBLIC_KEY, { locale: 'pt-BR' });
 
 export default function Checkout() {
@@ -25,17 +24,16 @@ export default function Checkout() {
   });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [pixData, setPixData] = useState(null); // Para guardar o QR Code do PIX
+  const [pixData, setPixData] = useState(null);
+  const [paymentMethod, setPaymentMethod] = useState('credit_card');
 
   const handle = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
-  // O onSubmit agora é chamado pelo Brick do Mercado Pago
   const onPaymentSubmit = async ({ selectedPaymentMethod, formData }) => {
     if (!items.length) return;
     setLoading(true);
 
     try {
-      // 1. Enviar para a nossa API Serverless Segura
       const response = await fetch('/api/payment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -46,10 +44,13 @@ export default function Checkout() {
             quantity: i.quantity,
           })),
           customer: {
-            name: form.name || formData.payer.first_name || 'Cliente',
-            email: form.email || formData.payer.email,
+            name: form.name || formData?.payer?.first_name || 'Cliente',
+            email: form.email || formData?.payer?.email,
           },
-          paymentData: formData // Envia o token do cartão, parcelas, etc gerados pelo Brick
+          paymentData: {
+            ...formData,
+            payment_method_id: selectedPaymentMethod === 'pix' ? 'pix' : (formData?.payment_method_id || selectedPaymentMethod),
+          },
         }),
       });
 
@@ -57,7 +58,6 @@ export default function Checkout() {
 
       if (!response.ok) throw new Error(paymentResult.error || 'Erro ao processar pagamento');
 
-      // 2. Salvar o pedido no Sanity
       await base44.entities.Order.create({
         items: items.map((i) => ({
           product_id: i.productId,
@@ -78,7 +78,6 @@ export default function Checkout() {
         status: paymentResult.status === 'approved' ? 'paid' : 'pending',
       });
 
-      // 3. Sucesso ou Tela do PIX
       if (paymentResult.qr_code_base64) {
         setPixData(paymentResult);
       } else {
@@ -88,55 +87,66 @@ export default function Checkout() {
     } catch (error) {
       console.error(error);
       toast({
-        title: "Erro no pagamento",
-        description: error.message || "Tente novamente em instantes.",
-        variant: "destructive"
+        title: 'Erro no pagamento',
+        description: error.message || 'Tente novamente em instantes.',
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);
     }
   };
 
-  if (pixData) {
-    return (
-      <div className="min-h-screen pt-28 flex items-center justify-center px-5">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="text-center max-w-md bg-card p-8 rounded-2xl border border-white/10"
-        >
-          <h1 className="font-heading font-black text-3xl text-offwhite mb-3">Escaneie o QR Code</h1>
-          <p className="text-muted-foreground font-body mb-6 text-sm">
-            Abra o app do seu banco e escaneie o código abaixo ou copie a chave PIX para finalizar sua compra de <strong className="text-white">R$ {total.toFixed(2).replace('.', ',')}</strong>.
-          </p>
-          <img 
-            src={`data:image/jpeg;base64,${pixData.qr_code_base64}`} 
-            alt="QR Code PIX" 
-            className="w-48 h-48 mx-auto mb-6 rounded-lg shadow-lg border border-white/20" 
-          />
-          <button
-            onClick={() => {
-              navigator.clipboard.writeText(pixData.qr_code);
-              toast({ title: 'Copiado!', description: 'Chave PIX copiada para a área de transferência.' });
-            }}
-            className="w-full bg-terracota hover:bg-[#c26640] text-white font-heading font-bold px-8 py-3 rounded-xl transition-colors mb-4"
-          >
-            Copiar Código PIX
-          </button>
-          <button
-            onClick={() => {
-              clearCart();
-              setSuccess(true);
-              setPixData(null);
-            }}
-            className="text-muted-foreground text-sm font-body hover:text-white transition-colors"
-          >
-            Já realizei o pagamento
-          </button>
-        </motion.div>
+  const renderPixSection = () => (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="bg-card p-6 rounded-2xl border border-white/10 text-center"
+    >
+      <h2 className="font-heading font-black text-2xl text-offwhite mb-4">Pagamento via PIX</h2>
+      <p className="text-muted-foreground font-body mb-6 text-sm">
+        Escaneie o QR Code abaixo no app do seu banco. O valor total é{' '}
+        <strong className="text-white">R$ {total.toFixed(2).replace('.', ',')}</strong>.
+      </p>
+
+      <div className="bg-white p-4 rounded-xl inline-block mb-6 shadow-xl border border-white/20">
+        <img
+          src={`data:image/jpeg;base64,${pixData.qr_code_base64}`}
+          alt="QR Code PIX"
+          className="w-48 h-48"
+        />
       </div>
-    );
-  }
+
+      <div className="space-y-4">
+        <button
+          onClick={() => {
+            navigator.clipboard.writeText(pixData.qr_code);
+            toast({ title: 'Copiado!', description: 'Chave PIX copiada para a área de transferência.' });
+          }}
+          className="w-full bg-terracota hover:bg-[#c26640] text-white font-heading font-bold px-8 py-3 rounded-xl transition-colors"
+        >
+          Copiar Código PIX
+        </button>
+
+        <button
+          onClick={() => {
+            clearCart();
+            setSuccess(true);
+            setPixData(null);
+          }}
+          className="w-full bg-white/5 hover:bg-white/10 text-offwhite font-heading font-bold px-8 py-3 rounded-xl transition-colors"
+        >
+          Já realizei o pagamento
+        </button>
+
+        <button
+          onClick={() => setPixData(null)}
+          className="text-muted-foreground text-xs font-body hover:text-white transition-colors"
+        >
+          Alterar forma de pagamento
+        </button>
+      </div>
+    </motion.div>
+  );
 
   if (success) {
     return (
@@ -194,7 +204,6 @@ export default function Checkout() {
 
         <div className="grid lg:grid-cols-[1fr,400px] gap-8">
           {/* Form */}
-          {/* Form */}
           <div className="space-y-5">
             <h2 className="font-heading font-bold text-lg text-offwhite">Dados de Entrega</h2>
 
@@ -221,23 +230,105 @@ export default function Checkout() {
             ))}
 
             <div className="mt-8 pt-6 border-t border-white/10">
-              <h2 className="font-heading font-bold text-lg text-offwhite mb-4">Pagamento Seguro</h2>
-              
-              {/* O Brick mágico do Mercado Pago! */}
-              <div className="rounded-xl overflow-hidden bg-white">
-                <Payment
-                  initialization={{ amount: total }}
-                  customization={{
-                    paymentMethods: {
-                      pix: 'all',
-                      creditCard: 'all',
-                      bankTransfer: 'all'
-                    },
-                  }}
-                  onSubmit={onPaymentSubmit}
-                  onError={(error) => console.error('Erro no Brick:', error)}
-                />
-              </div>
+              <h2 className="font-heading font-bold text-lg text-offwhite mb-6">Forma de Pagamento</h2>
+
+              {pixData ? (
+                renderPixSection()
+              ) : (
+                <div className="space-y-6">
+                  {/* Seleção de método */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod('credit_card')}
+                      className={`p-4 rounded-xl border transition-all flex flex-col items-center gap-2 ${
+                        paymentMethod === 'credit_card'
+                          ? 'border-terracota bg-terracota/10'
+                          : 'border-white/10 bg-card hover:border-white/20'
+                      }`}
+                    >
+                      <span className="text-xl">💳</span>
+                      <span className="font-heading font-bold text-xs text-offwhite uppercase tracking-wider">Cartão</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod('pix')}
+                      className={`p-4 rounded-xl border transition-all flex flex-col items-center gap-2 ${
+                        paymentMethod === 'pix'
+                          ? 'border-terracota bg-terracota/10'
+                          : 'border-white/10 bg-card hover:border-white/20'
+                      }`}
+                    >
+                      <span className="text-xl">💎</span>
+                      <span className="font-heading font-bold text-xs text-offwhite uppercase tracking-wider">Pix</span>
+                    </button>
+                  </div>
+
+                  {/* Cartão — usa o Brick do Mercado Pago */}
+                  {paymentMethod === 'credit_card' && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="rounded-xl overflow-hidden bg-white"
+                    >
+                      <Payment
+                        key={form.email}
+                        initialization={{
+                          amount: total,
+                          payer: {
+                            email: form.email || 'contato@base44.com',
+                          },
+                        }}
+                        customization={{
+                          paymentMethods: {
+                            creditCard: 'all',
+                          },
+                        }}
+                        onSubmit={onPaymentSubmit}
+                      />
+                    </motion.div>
+                  )}
+
+                  {/* Pix — botão direto, sem formulário extra */}
+                  {paymentMethod === 'pix' && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="space-y-4"
+                    >
+                      {!form.email || !form.name ? (
+                        <p className="text-xs text-terracota font-body text-center bg-terracota/5 p-3 rounded-lg border border-terracota/20">
+                          ⚠️ Preencha seu Nome e E-mail acima para liberar o Pix.
+                        </p>
+                      ) : (
+                        <>
+                          <p className="text-xs text-muted-foreground font-body text-center">
+                            Clique abaixo para gerar seu QR Code Pix exclusivo.
+                          </p>
+                          <button
+                            onClick={() =>
+                              onPaymentSubmit({
+                                selectedPaymentMethod: 'pix',
+                                formData: {
+                                  payment_method_id: 'pix',
+                                  payer: {
+                                    email: form.email,
+                                    first_name: form.name.split(' ')[0],
+                                  },
+                                },
+                              })
+                            }
+                            disabled={loading}
+                            className="w-full bg-terracota hover:bg-[#c26640] disabled:opacity-50 text-white font-heading font-black text-lg py-5 rounded-xl transition-all shadow-[0_0_20px_rgba(166,84,50,0.3)]"
+                          >
+                            {loading ? 'GERANDO...' : 'FINALIZAR COM PIX'}
+                          </button>
+                        </>
+                      )}
+                    </motion.div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 

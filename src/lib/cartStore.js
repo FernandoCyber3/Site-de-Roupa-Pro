@@ -7,7 +7,7 @@ const useCartStore = create((set, get) => ({
   isOpen: false,
 
   // O(1) amortized add — find by composite key, increment or push
-  addItem: (product, size, color) => {
+  addItem: (product, size, color, image) => {
     set((state) => {
       const key = `${product.id}_${size}_${color}`;
       const existing = state.items.find((i) => i.key === key);
@@ -26,7 +26,7 @@ const useCartStore = create((set, get) => ({
             productId: product.id,
             title: product.title,
             price: product.promo_price || product.price,
-            image: product.images?.[0] || '',
+            image: image || product.images?.[0] || '',
             size,
             color,
             quantity: 1,

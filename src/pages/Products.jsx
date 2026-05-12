@@ -60,6 +60,12 @@ export default function Products() {
   // O(n) filter pass
   const filtered = useMemo(() => {
     let result = [...products].filter((p) => p.status !== 'draft');
+    
+    // Filtro do Catálogo: se não houver filtro ativo (categoria ou promo), respeita o campo isCatalog
+    if (!activeCategory && !showPromo) {
+      result = result.filter((p) => p.isCatalog !== false);
+    }
+
     if (activeCategory) result = result.filter((p) => p.category === activeCategory);
     if (showPromo) result = result.filter((p) => p.promo_price && p.promo_price < p.price);
     if (activeSize)
@@ -142,7 +148,7 @@ export default function Products() {
               key={cat.slug}
               onClick={() => {
                 setActiveCategory(activeCategory === cat.slug ? '' : cat.slug);
-                setShowPromo(false); // Clear outlet when selecting a specific category
+                setShowPromo(false); // Clear promo when selecting a specific category
               }}
               className={`px-4 py-1.5 rounded-full text-sm font-body border transition-all ${activeCategory === cat.slug
                   ? 'bg-terracota border-terracota text-white'
@@ -157,14 +163,14 @@ export default function Products() {
           <button
             onClick={() => {
               setShowPromo(!showPromo);
-              if (!showPromo) setActiveCategory(''); // Clear category when entering outlet
+              if (!showPromo) setActiveCategory(''); // Clear category when entering promo
             }}
             className={`px-4 py-1.5 rounded-full text-sm font-body border transition-all ${showPromo
                 ? 'bg-terracota border-terracota text-white'
                 : 'border-white/15 text-muted-foreground hover:border-terracota/50 hover:text-offwhite'
               }`}
           >
-            Outlet
+            Promoção
           </button>
 
           <div className="ml-auto flex items-center gap-4">

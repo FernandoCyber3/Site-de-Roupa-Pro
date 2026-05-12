@@ -5,6 +5,7 @@ import Navbar from './Navbar';
 import Footer from './Footer';
 import WhatsAppFAB from './WhatsAppFAB';
 import CartDrawer from './CartDrawer';
+import PWAInstallPrompt from './PWAInstallPrompt';
 
 export default function Layout() {
   const { data: configs } = useQuery({
@@ -16,8 +17,9 @@ export default function Layout() {
 
   return (
     <div className="min-h-screen bg-background font-body">
-      <Navbar />
+      <Navbar config={config} />
       <CartDrawer />
+      <PWAInstallPrompt />
       <main>
         <Outlet context={{ config }} />
       </main>

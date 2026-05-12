@@ -86,7 +86,7 @@ export default function Footer({ config }) {
             { label: 'Categorias', to: '/#categorias' },
             { label: 'Catálogo', to: '/produtos' },
             { label: 'Novidades', to: '/produtos?filter=new' },
-            { label: 'Outlet', to: '/produtos?filter=sale' },
+            { label: 'Promoção', to: '/produtos?filter=sale' },
             { label: 'Meu Carrinho', action: toggleCart },
           ].map((l) => (
             l.to ? (

@@ -19,7 +19,14 @@ export default {
       name: 'promo_price',
       title: 'Preço Promocional (Opcional)',
       type: 'number',
-      description: 'Se preenchido, o produto aparecerá como Oferta/Outlet com preço riscado.'
+      description: 'Se preenchido, o produto aparecerá como Oferta/Promoção com preço riscado.'
+    },
+    {
+      name: 'isCatalog',
+      title: 'Aparecer no Catálogo?',
+      type: 'boolean',
+      initialValue: true,
+      description: 'Se desmarcado, o produto não aparecerá na aba geral de Catálogo.'
     },
     {
       name: 'category',

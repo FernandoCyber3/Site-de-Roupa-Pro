@@ -40,8 +40,7 @@ export default function Home() {
 
   return (
     <div>
-      {/* Announcement banner */}
-      <BannerStrip text={bannerText} />
+      {/* Hero */}
 
       {/* Hero */}
       <HeroSection config={config} />
