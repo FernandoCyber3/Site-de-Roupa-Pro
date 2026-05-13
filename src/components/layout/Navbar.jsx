@@ -68,9 +68,9 @@ export default function Navbar({ config }) {
       {/* Glassmorphism bar */}
       <div className={`${
         (isScrolled || !isHome || mobileOpen) 
-          ? 'glass-heavy' 
-          : 'bg-transparent border-transparent'
-      } mx-3 mt-8 rounded-2xl px-5 py-3 transition-all duration-500 border relative overflow-hidden group`}>
+          ? 'glass-heavy py-2 md:py-3' 
+          : 'bg-transparent border-transparent py-3 md:py-4'
+      } mx-3 mt-3 md:mt-6 rounded-2xl px-5 transition-all duration-500 border relative overflow-hidden group`}>
         {/* Animated Background Pulse for "Technological" feel */}
         <div className="absolute inset-0 bg-gradient-to-r from-terracota/0 via-terracota/10 to-terracota/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
         
@@ -107,7 +107,9 @@ export default function Navbar({ config }) {
               <img
                 src={LOGO_URL}
                 alt="SQUAD Authentic Style"
-                className="h-14 md:h-16 w-auto object-contain transition-all relative z-10 filter drop-shadow-[0_0_8px_rgba(166,84,50,0.3)]"
+                className={`${
+                  isScrolled ? 'h-10 md:h-12' : 'h-12 md:h-16'
+                } w-auto object-contain transition-all duration-500 relative z-10 filter drop-shadow-[0_0_8px_rgba(166,84,50,0.3)]`}
               />
 
               {/* Back Glow */}

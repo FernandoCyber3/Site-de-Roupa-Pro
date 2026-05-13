@@ -43,12 +43,15 @@ const mapProduct = (p) => {
   return {
     ...p,
     id: p._id,
+    title: p.title || 'Produto sem título',
+    price: Number(p.price) || 0,
+    promo_price: p.promo_price ? Number(p.promo_price) : undefined,
     image: combinedImages[0] ? urlFor(combinedImages[0]).url() : undefined,
     images: combinedImages.map(img => urlFor(img).url()),
-    category: p.categorySlug || p.categoryName,
-    categoryName: p.categoryName,
+    category: p.categorySlug || p.categoryName || 'Geral',
+    categoryName: p.categoryName || 'Geral',
     variants,
-    created_date: p._createdAt
+    created_date: p._createdAt || new Date().toISOString()
   };
 };
 

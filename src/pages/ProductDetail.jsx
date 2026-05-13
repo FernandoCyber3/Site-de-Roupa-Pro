@@ -175,7 +175,24 @@ export default function ProductDetail() {
           {/* Images */}
           <div className="space-y-3">
             {/* Main image */}
-            <div className="relative aspect-[3/4] rounded-2xl overflow-hidden bg-card">
+            <div 
+              className="relative aspect-[3/4] rounded-2xl overflow-hidden bg-card touch-pan-y"
+              onTouchStart={(e) => {
+                const touch = e.touches[0];
+                window.swipeStartX = touch.clientX;
+              }}
+              onTouchEnd={(e) => {
+                const touch = e.changedTouches[0];
+                const deltaX = touch.clientX - (window.swipeStartX || 0);
+                if (Math.abs(deltaX) > 50) { // Threshold for swipe
+                  if (deltaX > 0) {
+                    handleImageChange(Math.max(0, currentImg - 1));
+                  } else {
+                    handleImageChange(Math.min(images.length - 1, currentImg + 1));
+                  }
+                }
+              }}
+            >
               <AnimatePresence mode="wait">
                 <motion.img
                   key={currentImg}
@@ -240,16 +257,16 @@ export default function ProductDetail() {
             {/* Price */}
             <div className="flex items-center gap-3 mb-6">
               <span className="font-heading font-black text-3xl text-offwhite">
-                R$ {price?.toFixed(2).replace('.', ',')}
+                R$ {(price || 0).toFixed(2).replace('.', ',')}
               </span>
               {hasPromo && (
                 <span className="text-lg text-muted-foreground line-through font-body">
-                  R$ {product.price.toFixed(2).replace('.', ',')}
+                  R$ {(product?.price || 0).toFixed(2).replace('.', ',')}
                 </span>
               )}
               {hasPromo && (
                 <span className="bg-terracota text-white text-xs font-bold px-2 py-0.5 rounded-md">
-                  -{Math.round(((product.price - product.promo_price) / product.price) * 100)}%
+                  -{Math.round((((product?.price || 0) - (product?.promo_price || 0)) / (product?.price || 1)) * 100)}%
                 </span>
               )}
             </div>

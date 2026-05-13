@@ -117,7 +117,7 @@ export default function Products() {
   }, [products, activeCategory]);
 
   return (
-    <div className="min-h-screen pt-28 pb-20 px-5">
+    <div className="min-h-screen pt-36 md:pt-44 pb-20 px-5">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <motion.div
@@ -132,7 +132,9 @@ export default function Products() {
         </motion.div>
 
         {/* Filters bar */}
-        <div className="flex flex-wrap items-center gap-3 mb-8">
+        <div className="mb-8 space-y-6">
+          {/* Categories - Horizontal Scroll on Mobile */}
+          <div className="flex items-center gap-3 overflow-x-auto pb-2 no-scrollbar -mx-5 px-5 md:mx-0 md:px-0 md:flex-wrap">
           {/* Category pills */}
           <button
             onClick={() => setActiveCategory('')}
@@ -150,31 +152,31 @@ export default function Products() {
                 setActiveCategory(activeCategory === cat.slug ? '' : cat.slug);
                 setShowPromo(false); // Clear promo when selecting a specific category
               }}
-              className={`px-4 py-1.5 rounded-full text-sm font-body border transition-all ${activeCategory === cat.slug
-                  ? 'bg-terracota border-terracota text-white'
+              className={`px-5 py-2 rounded-full text-sm font-body border transition-all whitespace-nowrap min-w-fit flex items-center justify-center ${activeCategory === cat.slug
+                  ? 'bg-terracota border-terracota text-white shadow-[0_0_15px_rgba(166,84,50,0.4)]'
                   : 'border-white/15 text-muted-foreground hover:border-terracota/50 hover:text-offwhite'
                 }`}
             >
               {cat.name}
             </button>
           ))}
-
           {/* Promo toggle */}
           <button
             onClick={() => {
               setShowPromo(!showPromo);
               if (!showPromo) setActiveCategory(''); // Clear category when entering promo
             }}
-            className={`px-4 py-1.5 rounded-full text-sm font-body border transition-all ${showPromo
+            className={`px-4 py-1.5 rounded-full text-sm font-body border transition-all whitespace-nowrap ${showPromo
                 ? 'bg-terracota border-terracota text-white'
                 : 'border-white/15 text-muted-foreground hover:border-terracota/50 hover:text-offwhite'
               }`}
           >
             Promoção
           </button>
+          </div>
 
-          <div className="ml-auto flex items-center gap-4">
-            <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-4 pt-2 border-t border-white/5">
+            <div className="flex flex-wrap items-center gap-2">
               {/* Letters Group */}
               {sizeGroups.letters.map((sz) => (
                 <button

@@ -75,22 +75,24 @@ export default function ProductCard({ product, index = 0 }) {
             <motion.img
               src={image}
               alt={product.title}
+              loading="lazy"
               animate={{ opacity: showVideo ? 0 : 1 }}
-              transition={{ duration: 0.4 }}
+              transition={{ duration: 0.3 }}
               className="absolute inset-0 w-full h-full object-cover"
             />
 
             {/* Video — autoplay on hover (desktop) or tap (mobile) */}
-            {product.video_url && (
+            {product.video_url && showVideo && (
               <motion.video
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
                 src={product.video_url}
                 autoPlay
                 loop
                 muted
                 playsInline
+                preload="auto"
                 onError={() => setVideoError(true)}
-                animate={{ opacity: showVideo ? 1 : 0 }}
-                transition={{ duration: 0.4 }}
                 className="absolute inset-0 w-full h-full object-cover"
               />
             )}

@@ -21,13 +21,26 @@ export default function Checkout() {
     address: '',
     number: '',
     neighborhood: '',
+    cpf: '',
   });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [pixData, setPixData] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState('credit_card');
 
-  const handle = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+  const handle = (k, v) => {
+    if (k === 'cpf') {
+      // CPF Mask (000.000.000-00)
+      const clean = v.replace(/\D/g, '').slice(0, 11);
+      const masked = clean
+        .replace(/(\d{3})(\d)/, '$1.$2')
+        .replace(/(\d{3})(\d)/, '$1.$2')
+        .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+      setForm((f) => ({ ...f, [k]: masked }));
+    } else {
+      setForm((f) => ({ ...f, [k]: v }));
+    }
+  };
 
   const onPaymentSubmit = async ({ selectedPaymentMethod, formData }) => {
     if (!items.length) return;
@@ -46,6 +59,7 @@ export default function Checkout() {
           customer: {
             name: form.name || formData?.payer?.first_name || 'Cliente',
             email: form.email || formData?.payer?.email,
+            cpf: form.cpf,
           },
           paymentData: {
             ...formData,
@@ -214,6 +228,7 @@ export default function Checkout() {
               { key: 'name', label: 'Nome completo', type: 'text', required: true },
               { key: 'email', label: 'E-mail', type: 'email', required: true },
               { key: 'phone', label: 'WhatsApp / Telefone', type: 'tel', required: true },
+              { key: 'cpf', label: 'CPF (Necessário para PIX)', type: 'text', required: true },
               { key: 'address', label: 'Endereço (Rua)', type: 'text', required: true },
               { key: 'number', label: 'Número', type: 'text', required: true },
               { key: 'neighborhood', label: 'Bairro', type: 'text', required: true },
@@ -299,14 +314,14 @@ export default function Checkout() {
                       animate={{ opacity: 1, y: 0 }}
                       className="space-y-4"
                     >
-                      {!form.email || !form.name ? (
+                      {!form.email || !form.name || !form.cpf || form.cpf.length < 14 ? (
                         <p className="text-xs text-terracota font-body text-center bg-terracota/5 p-3 rounded-lg border border-terracota/20">
-                          ⚠️ Preencha seu Nome e E-mail acima para liberar o Pix.
+                          ⚠️ Preencha Nome, E-mail e CPF válido acima para liberar o Pix.
                         </p>
                       ) : (
-                        <>
-                          <p className="text-xs text-muted-foreground font-body text-center">
-                            Clique abaixo para gerar seu QR Code Pix exclusivo.
+                        <div className="space-y-4">
+                          <p className="text-xs text-muted-foreground font-body text-center px-4 uppercase tracking-[0.1em]">
+                            O QR Code será gerado para pagamento imediato.
                           </p>
                           <button
                             onClick={() =>
@@ -322,11 +337,18 @@ export default function Checkout() {
                               })
                             }
                             disabled={loading}
-                            className="w-full bg-terracota hover:bg-[#c26640] disabled:opacity-50 text-white font-heading font-black text-lg py-5 rounded-xl transition-all shadow-[0_0_20px_rgba(166,84,50,0.3)]"
+                            className="w-full h-16 bg-white text-black font-heading font-black text-sm uppercase tracking-widest rounded-xl hover:bg-white/90 transition-all disabled:opacity-50 flex items-center justify-center gap-2 group shadow-[0_0_30px_rgba(255,255,255,0.1)]"
                           >
-                            {loading ? 'GERANDO...' : 'FINALIZAR COM PIX'}
+                            {loading ? (
+                              <div className="w-5 h-5 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                            ) : (
+                              <>
+                                Gerar QR Code Pix
+                                <ShoppingBag className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                              </>
+                            )}
                           </button>
-                        </>
+                        </div>
                       )}
                     </motion.div>
                   )}

@@ -24,14 +24,14 @@ const checkoutSchema = z.object({
       id: z.string(),
       title: z.string(),
       quantity: z.number().int().positive(),
-      // Preço NÃO vem do frontend!
     })
   ).min(1),
   customer: z.object({
     name: z.string().min(2),
     email: z.string().email(),
+    cpf: z.string().optional(),
   }),
-  paymentData: z.any() // Dados brutos enviados pelo Brick (token, parcelas, metodo)
+  paymentData: z.any()
 });
 
 export default async function handler(req, res) {
@@ -65,13 +65,18 @@ export default async function handler(req, res) {
       const realProduct = realProducts.find(p => p._id === item.id);
       if (!realProduct) throw new Error(`Produto não encontrado: ${item.title}`);
 
-      const priceToUse = realProduct.promo_price ? realProduct.promo_price : realProduct.price;
+      // Garantir que o preço seja um número válido
+      const priceToUse = Number(realProduct.promo_price || realProduct.price || 0);
+
+      if (isNaN(priceToUse) || priceToUse <= 0) {
+        throw new Error(`O produto ${item.title} está com preço inválido.`);
+      }
 
       return {
         id: item.id,
         title: item.title,
         quantity: item.quantity,
-        unit_price: Number(priceToUse), // <-- PREÇO TOTALMENTE SEGURO DO SANITY!
+        unit_price: priceToUse,
         currency_id: 'BRL',
       }
     });
@@ -92,14 +97,26 @@ export default async function handler(req, res) {
       last_name: payer.last_name || body.customer.name.split(' ').slice(1).join(' '),
     };
 
-    // Se o Brick PIX gerou identification, garantimos que ela não seja vazia.
-    // Se for vazia, nós apenas deletamos a chave se ela estiver inválida para evitar falhas,
-    // (Porém, o MP geralmente recusa PIX sem CPF. Se não tiver CPF e for PIX, o MP recusará).
-    if (payer.identification && (!payer.identification.number || payer.identification.number === '')) {
-      delete payer.identification;
+    // Mercado Pago exige CPF para PIX
+    if (paymentData.payment_method_id === 'pix') {
+      payer.identification = {
+        type: 'CPF',
+        number: body.customer.cpf?.replace(/\D/g, '') || payer.identification?.number?.replace(/\D/g, '')
+      };
+
+      if (!payer.identification.number) {
+        throw new Error('O CPF é obrigatório para pagamentos via PIX.');
+      }
     }
 
-    const transactionAmount = validatedItems.reduce((acc, item) => acc + (item.unit_price * item.quantity), 0);
+    const transactionAmount = Number(validatedItems.reduce((acc, item) => acc + (item.unit_price * item.quantity), 0).toFixed(2));
+
+    console.log('Final Transaction Amount:', transactionAmount);
+    console.log('Payment Method:', paymentData.payment_method_id);
+
+    if (isNaN(transactionAmount) || transactionAmount <= 0) {
+      throw new Error('O valor total da compra é inválido.');
+    }
 
     const response = await payment.create({
       body: {
@@ -107,8 +124,8 @@ export default async function handler(req, res) {
         description: 'Pedido SQUAD',
         payment_method_id: paymentData.payment_method_id,
         payer: payer,
-        token: paymentData.token, // Token seguro do cartão gerado no frontend
-        installments: paymentData.installments,
+        token: paymentData.token, 
+        installments: Number(paymentData.installments) || 1,
         issuer_id: paymentData.issuer_id,
       }
     });
